@@ -1,0 +1,164 @@
+---
+interface Props {
+  section?: {
+    id?: string;
+    page_type: string;
+    page_id: string;
+    section_type: string;
+    title: string | null;
+    content: string | null;
+    content_data: Record<string, any>;
+    sort_order: number;
+    is_active: boolean;
+  };
+  error?: string;
+}
+
+const { section, error } = Astro.props;
+const isEdit = !!section?.id;
+
+const pageTypes = ['credit_card', 'category', 'homepage', 'article', 'lender'];
+const sectionTypes = ['rich_text', 'faq_accordion', 'comparison_table', 'callout_box', 'checklist', 'numbered_steps', 'feature_highlights', 'two_column_text', 'cta_banner'];
+---
+
+{error && (
+  <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6 flex items-start gap-3">
+    <i class="ri-error-warning-line text-red-400 text-xl mt-0.5 shrink-0"></i>
+    <p class="text-red-300 text-sm">{error}</p>
+  </div>
+)}
+
+<form method="POST" class="space-y-6">
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
+    <h2 class="text-sm font-medium text-slate-400 uppercase tracking-wider">Page Assignment</h2>
+
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div>
+        <label for="page_type" class="block text-sm font-medium text-slate-300 mb-1.5">Page Type</label>
+        <select id="page_type" name="page_type" required class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500">
+          {pageTypes.map(pt => (
+            <option value={pt} selected={section?.page_type === pt}>{pt}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label for="page_id" class="block text-sm font-medium text-slate-300 mb-1.5">Page ID (UUID)</label>
+        <input
+          type="text"
+          id="page_id"
+          name="page_id"
+          required
+          value={section?.page_id || ''}
+          placeholder="00000000-0000-0000-0000-000000000001"
+          class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 placeholder-slate-600 font-mono text-sm"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
+    <h2 class="text-sm font-medium text-slate-400 uppercase tracking-wider">Section Content</h2>
+
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div>
+        <label for="section_type" class="block text-sm font-medium text-slate-300 mb-1.5">Section Type</label>
+        <select id="section_type" name="section_type" required class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500">
+          {sectionTypes.map(st => (
+            <option value={st} selected={section?.section_type === st}>{st.replace(/_/g, ' ')}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label for="title" class="block text-sm font-medium text-slate-300 mb-1.5">Title</label>
+        <input
+          type="text"
+          id="title"
+          name="title"
+          value={section?.title || ''}
+          placeholder="Section title"
+          class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 placeholder-slate-600"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label for="content" class="block text-sm font-medium text-slate-300 mb-1.5">Content (HTML/Markdown)</label>
+      <textarea
+        id="content"
+        name="content"
+        rows="6"
+        placeholder="HTML or markdown content for simple sections..."
+        class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 placeholder-slate-600 font-mono text-sm resize-y"
+      >{section?.content || ''}</textarea>
+    </div>
+
+    <div>
+      <label for="content_data" class="block text-sm font-medium text-slate-300 mb-1.5">
+        Content Data (JSON)
+        <span class="text-slate-500 font-normal ml-1">for structured sections like FAQs, tables, checklists</span>
+      </label>
+      <textarea
+        id="content_data"
+        name="content_data"
+        rows="10"
+        placeholder='{}'
+        class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 placeholder-slate-600 font-mono text-sm resize-y"
+      >{JSON.stringify(section?.content_data ?? {}, null, 2)}</textarea>
+      <p id="json-error" class="text-red-400 text-xs mt-1 hidden">Invalid JSON</p>
+    </div>
+  </div>
+
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
+    <h2 class="text-sm font-medium text-slate-400 uppercase tracking-wider">Display Settings</h2>
+
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div>
+        <label for="sort_order" class="block text-sm font-medium text-slate-300 mb-1.5">Sort Order</label>
+        <input
+          type="number"
+          id="sort_order"
+          name="sort_order"
+          value={section?.sort_order ?? 0}
+          class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500"
+        />
+      </div>
+      <div class="flex items-end pb-1">
+        <label class="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            name="is_active"
+            value="true"
+            checked={section?.is_active !== false}
+            class="w-5 h-5 rounded bg-slate-800 border-slate-700 text-orange-500 focus:ring-orange-500 focus:ring-offset-0 cursor-pointer"
+          />
+          <span class="text-sm text-slate-300">Active (visible on site)</span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-between">
+    <a href="/admin/sections" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">Cancel</a>
+    <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2">
+      <i class={isEdit ? 'ri-save-line' : 'ri-add-line'}></i>
+      {isEdit ? 'Save Changes' : 'Create Section'}
+    </button>
+  </div>
+</form>
+
+<script>
+  const contentDataEl = document.getElementById('content_data') as HTMLTextAreaElement;
+  const jsonError = document.getElementById('json-error');
+
+  contentDataEl?.addEventListener('blur', () => {
+    try {
+      const val = contentDataEl.value.trim();
+      if (val) JSON.parse(val);
+      jsonError?.classList.add('hidden');
+      contentDataEl.classList.remove('border-red-500');
+    } catch {
+      jsonError?.classList.remove('hidden');
+      contentDataEl.classList.add('border-red-500');
+    }
+  });
+</script>

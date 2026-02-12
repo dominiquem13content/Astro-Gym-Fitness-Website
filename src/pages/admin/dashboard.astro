@@ -1,0 +1,146 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { createServerClient } from '../../lib/supabase-server';
+
+export const prerender = false;
+
+const supabase = createServerClient(Astro.cookies);
+
+const [sectionsRes, seoRes, templatesRes, recentRes] = await Promise.all([
+  supabase.from('page_content_sections').select('id, is_active', { count: 'exact', head: true }),
+  supabase.from('page_seo_content').select('id', { count: 'exact', head: true }),
+  supabase.from('content_templates').select('id', { count: 'exact', head: true }),
+  supabase.from('page_content_sections').select('id, title, section_type, page_type, is_active, updated_at').order('updated_at', { ascending: false }).limit(8),
+]);
+
+const totalSections = sectionsRes.count ?? 0;
+const totalSeo = seoRes.count ?? 0;
+const totalTemplates = templatesRes.count ?? 0;
+const recentSections = recentRes.data ?? [];
+
+const { count: activeCount } = await supabase
+  .from('page_content_sections')
+  .select('id', { count: 'exact', head: true })
+  .eq('is_active', true);
+
+const activeSections = activeCount ?? 0;
+const inactiveSections = totalSections - activeSections;
+
+const stats = [
+  { label: 'Content Sections', value: totalSections, icon: 'ri-layout-grid-line', color: 'orange', href: '/admin/sections' },
+  { label: 'Active Sections', value: activeSections, icon: 'ri-checkbox-circle-line', color: 'emerald', href: '/admin/sections' },
+  { label: 'SEO Entries', value: totalSeo, icon: 'ri-search-eye-line', color: 'sky', href: '/admin/seo' },
+  { label: 'Templates', value: totalTemplates, icon: 'ri-file-copy-line', color: 'amber', href: '/admin/templates' },
+];
+
+const colorMap: Record<string, { bg: string; text: string; border: string }> = {
+  orange: { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/20' },
+  emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
+  sky: { bg: 'bg-sky-500/10', text: 'text-sky-400', border: 'border-sky-500/20' },
+  amber: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
+};
+---
+
+<AdminLayout title="Dashboard">
+  <div class="space-y-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-slate-400 text-sm">Welcome back, {Astro.locals.admin?.displayName}</p>
+      </div>
+      <a href="/admin/sections/new" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+        <i class="ri-add-line"></i>
+        New Section
+      </a>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {stats.map(stat => {
+        const colors = colorMap[stat.color];
+        return (
+          <a href={stat.href} class={`${colors.bg} border ${colors.border} rounded-xl p-5 hover:scale-[1.02] transition-transform`}>
+            <div class="flex items-center justify-between mb-3">
+              <i class={`${stat.icon} ${colors.text} text-2xl`}></i>
+            </div>
+            <p class="text-3xl font-bold text-white">{stat.value}</p>
+            <p class="text-sm text-slate-400 mt-1">{stat.label}</p>
+          </a>
+        );
+      })}
+    </div>
+
+    <div>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">Recent Sections</h2>
+        <a href="/admin/sections" class="text-sm text-orange-400 hover:text-orange-300 transition-colors">View all</a>
+      </div>
+
+      {recentSections.length === 0 ? (
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center">
+          <i class="ri-inbox-line text-4xl text-slate-600 mb-3"></i>
+          <p class="text-slate-400">No content sections yet</p>
+          <a href="/admin/sections/new" class="text-orange-400 hover:text-orange-300 text-sm mt-2 inline-block">Create your first section</a>
+        </div>
+      ) : (
+        <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-slate-800">
+                  <th class="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
+                  <th class="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Type</th>
+                  <th class="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Page</th>
+                  <th class="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                  <th class="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Updated</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/50">
+                {recentSections.map(section => (
+                  <tr class="hover:bg-slate-800/30 transition-colors">
+                    <td class="px-5 py-3">
+                      <a href={`/admin/sections/${section.id}`} class="text-white hover:text-orange-400 transition-colors font-medium text-sm">
+                        {section.title || '(Untitled)'}
+                      </a>
+                    </td>
+                    <td class="px-5 py-3">
+                      <span class="text-xs bg-slate-800 text-slate-300 px-2 py-1 rounded-md font-mono">
+                        {section.section_type}
+                      </span>
+                    </td>
+                    <td class="px-5 py-3 text-sm text-slate-400">{section.page_type}</td>
+                    <td class="px-5 py-3">
+                      {section.is_active ? (
+                        <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-md">Active</span>
+                      ) : (
+                        <span class="text-xs bg-slate-700/50 text-slate-400 px-2 py-1 rounded-md">Inactive</span>
+                      )}
+                    </td>
+                    <td class="px-5 py-3 text-sm text-slate-500">
+                      {new Date(section.updated_at).toLocaleDateString('en-CA')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-4">
+      <a href="/admin/seo/new" class="bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors group">
+        <div class="flex items-center gap-3 mb-2">
+          <i class="ri-search-eye-line text-sky-400 text-xl"></i>
+          <h3 class="font-medium text-white">New SEO Entry</h3>
+        </div>
+        <p class="text-sm text-slate-400">Add intro, main, and bottom SEO text for a page.</p>
+      </a>
+      <a href="/admin/templates/new" class="bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors group">
+        <div class="flex items-center gap-3 mb-2">
+          <i class="ri-file-copy-line text-amber-400 text-xl"></i>
+          <h3 class="font-medium text-white">New Template</h3>
+        </div>
+        <p class="text-sm text-slate-400">Create a reusable content template for pages.</p>
+      </a>
+    </div>
+  </div>
+</AdminLayout>

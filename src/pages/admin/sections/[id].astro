@@ -1,0 +1,60 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import SectionForm from '../../../components/admin/SectionForm.astro';
+import { createServerClient } from '../../../lib/supabase-server';
+import { getSectionById, updateSection } from '../../../lib/cms-admin';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const supabase = createServerClient(Astro.cookies);
+
+let error = '';
+let section = await getSectionById(supabase, id!);
+
+if (!section) {
+  return Astro.redirect('/admin/sections');
+}
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+
+  let contentData = {};
+  try {
+    const raw = form.get('content_data')?.toString().trim();
+    if (raw) contentData = JSON.parse(raw);
+  } catch {
+    error = 'Invalid JSON in Content Data field.';
+  }
+
+  if (!error) {
+    try {
+      section = await updateSection(supabase, id!, {
+        page_type: form.get('page_type')?.toString() ?? section.page_type,
+        page_id: form.get('page_id')?.toString() ?? section.page_id,
+        section_type: form.get('section_type')?.toString() ?? section.section_type,
+        title: form.get('title')?.toString() || null,
+        content: form.get('content')?.toString() || null,
+        content_data: contentData,
+        sort_order: parseInt(form.get('sort_order')?.toString() ?? '0', 10),
+        is_active: form.get('is_active') === 'true',
+      });
+      return Astro.redirect('/admin/sections?success=Section+updated+successfully');
+    } catch (e: any) {
+      error = e.message || 'Failed to update section.';
+    }
+  }
+}
+---
+
+<AdminLayout title="Edit Section">
+  <div class="max-w-3xl">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="/admin/sections" class="text-sm text-slate-400 hover:text-slate-300 transition-colors flex items-center gap-1">
+        <i class="ri-arrow-left-s-line"></i> Back to sections
+      </a>
+      <span class="text-xs text-slate-600 font-mono">{id}</span>
+    </div>
+    <SectionForm section={section} error={error} />
+  </div>
+</AdminLayout>

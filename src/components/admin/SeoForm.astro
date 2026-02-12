@@ -1,0 +1,97 @@
+---
+interface Props {
+  entry?: {
+    id?: string;
+    page_type: string;
+    page_id: string;
+    intro_text: string | null;
+    main_content: string | null;
+    bottom_content: string | null;
+  };
+  error?: string;
+}
+
+const { entry, error } = Astro.props;
+const isEdit = !!entry?.id;
+const pageTypes = ['credit_card', 'category', 'homepage', 'article', 'lender'];
+---
+
+{error && (
+  <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6 flex items-start gap-3">
+    <i class="ri-error-warning-line text-red-400 text-xl mt-0.5 shrink-0"></i>
+    <p class="text-red-300 text-sm">{error}</p>
+  </div>
+)}
+
+<form method="POST" class="space-y-6">
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
+    <h2 class="text-sm font-medium text-slate-400 uppercase tracking-wider">Page Assignment</h2>
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div>
+        <label for="page_type" class="block text-sm font-medium text-slate-300 mb-1.5">Page Type</label>
+        <select id="page_type" name="page_type" required class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500">
+          {pageTypes.map(pt => (
+            <option value={pt} selected={entry?.page_type === pt}>{pt}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label for="page_id" class="block text-sm font-medium text-slate-300 mb-1.5">Page ID (UUID)</label>
+        <input
+          type="text"
+          id="page_id"
+          name="page_id"
+          required
+          value={entry?.page_id || ''}
+          placeholder="00000000-0000-0000-0000-000000000001"
+          class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 placeholder-slate-600 font-mono text-sm"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
+    <h2 class="text-sm font-medium text-slate-400 uppercase tracking-wider">SEO Text Blocks</h2>
+
+    <div>
+      <label for="intro_text" class="block text-sm font-medium text-slate-300 mb-1.5">Intro Text <span class="text-slate-500 font-normal">(150-200 words)</span></label>
+      <textarea
+        id="intro_text"
+        name="intro_text"
+        rows="5"
+        placeholder="Opening paragraph with HTML..."
+        class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 placeholder-slate-600 text-sm resize-y"
+      >{entry?.intro_text || ''}</textarea>
+    </div>
+
+    <div>
+      <label for="main_content" class="block text-sm font-medium text-slate-300 mb-1.5">Main Content <span class="text-slate-500 font-normal">(300-500 words)</span></label>
+      <textarea
+        id="main_content"
+        name="main_content"
+        rows="8"
+        placeholder="Main body content with HTML..."
+        class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 placeholder-slate-600 text-sm resize-y"
+      >{entry?.main_content || ''}</textarea>
+    </div>
+
+    <div>
+      <label for="bottom_content" class="block text-sm font-medium text-slate-300 mb-1.5">Bottom Content <span class="text-slate-500 font-normal">(200-300 words)</span></label>
+      <textarea
+        id="bottom_content"
+        name="bottom_content"
+        rows="5"
+        placeholder="Closing SEO text with HTML..."
+        class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 placeholder-slate-600 text-sm resize-y"
+      >{entry?.bottom_content || ''}</textarea>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-between">
+    <a href="/admin/seo" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">Cancel</a>
+    <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2">
+      <i class={isEdit ? 'ri-save-line' : 'ri-add-line'}></i>
+      {isEdit ? 'Save Changes' : 'Create SEO Entry'}
+    </button>
+  </div>
+</form>

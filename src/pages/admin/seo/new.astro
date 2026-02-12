@@ -1,0 +1,39 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import SeoForm from '../../../components/admin/SeoForm.astro';
+import { createServerClient } from '../../../lib/supabase-server';
+import { createSeoContent } from '../../../lib/cms-admin';
+
+export const prerender = false;
+
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const supabase = createServerClient(Astro.cookies);
+
+  try {
+    await createSeoContent(supabase, {
+      page_type: form.get('page_type')?.toString() ?? 'article',
+      page_id: form.get('page_id')?.toString() ?? '',
+      intro_text: form.get('intro_text')?.toString() || null,
+      main_content: form.get('main_content')?.toString() || null,
+      bottom_content: form.get('bottom_content')?.toString() || null,
+    });
+    return Astro.redirect('/admin/seo?success=SEO+entry+created+successfully');
+  } catch (e: any) {
+    error = e.message || 'Failed to create SEO entry.';
+  }
+}
+---
+
+<AdminLayout title="New SEO Entry">
+  <div class="max-w-3xl">
+    <div class="mb-6">
+      <a href="/admin/seo" class="text-sm text-slate-400 hover:text-slate-300 transition-colors flex items-center gap-1">
+        <i class="ri-arrow-left-s-line"></i> Back to SEO content
+      </a>
+    </div>
+    <SeoForm error={error} />
+  </div>
+</AdminLayout>

@@ -1,0 +1,116 @@
+---
+interface Props {
+  template?: {
+    id?: string;
+    template_name: string;
+    page_type: string;
+    sections: Record<string, any>[];
+    description: string | null;
+    is_public: boolean;
+  };
+  error?: string;
+}
+
+const { template, error } = Astro.props;
+const isEdit = !!template?.id;
+const pageTypes = ['credit_card', 'category', 'homepage', 'article', 'lender'];
+---
+
+{error && (
+  <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6 flex items-start gap-3">
+    <i class="ri-error-warning-line text-red-400 text-xl mt-0.5 shrink-0"></i>
+    <p class="text-red-300 text-sm">{error}</p>
+  </div>
+)}
+
+<form method="POST" class="space-y-6">
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
+    <h2 class="text-sm font-medium text-slate-400 uppercase tracking-wider">Template Details</h2>
+
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div>
+        <label for="template_name" class="block text-sm font-medium text-slate-300 mb-1.5">Template Name</label>
+        <input
+          type="text"
+          id="template_name"
+          name="template_name"
+          required
+          value={template?.template_name || ''}
+          placeholder="e.g., Credit Card Review Template"
+          class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 placeholder-slate-600"
+        />
+      </div>
+      <div>
+        <label for="page_type" class="block text-sm font-medium text-slate-300 mb-1.5">Page Type</label>
+        <select id="page_type" name="page_type" required class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500">
+          {pageTypes.map(pt => (
+            <option value={pt} selected={template?.page_type === pt}>{pt}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label for="description" class="block text-sm font-medium text-slate-300 mb-1.5">Description</label>
+      <textarea
+        id="description"
+        name="description"
+        rows="3"
+        placeholder="What is this template used for?"
+        class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 placeholder-slate-600 text-sm resize-y"
+      >{template?.description || ''}</textarea>
+    </div>
+
+    <div class="flex items-center">
+      <label class="flex items-center gap-3 cursor-pointer">
+        <input
+          type="checkbox"
+          name="is_public"
+          value="true"
+          checked={template?.is_public === true}
+          class="w-5 h-5 rounded bg-slate-800 border-slate-700 text-orange-500 focus:ring-orange-500 focus:ring-offset-0 cursor-pointer"
+        />
+        <span class="text-sm text-slate-300">Public (visible to anonymous users)</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
+    <h2 class="text-sm font-medium text-slate-400 uppercase tracking-wider">Sections Config (JSON)</h2>
+    <div>
+      <textarea
+        id="sections"
+        name="sections"
+        rows="12"
+        placeholder="[]"
+        class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 placeholder-slate-600 font-mono text-sm resize-y"
+      >{JSON.stringify(template?.sections ?? [], null, 2)}</textarea>
+      <p id="json-error" class="text-red-400 text-xs mt-1 hidden">Invalid JSON</p>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-between">
+    <a href="/admin/templates" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">Cancel</a>
+    <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2">
+      <i class={isEdit ? 'ri-save-line' : 'ri-add-line'}></i>
+      {isEdit ? 'Save Changes' : 'Create Template'}
+    </button>
+  </div>
+</form>
+
+<script>
+  const sectionsEl = document.getElementById('sections') as HTMLTextAreaElement;
+  const jsonError = document.getElementById('json-error');
+
+  sectionsEl?.addEventListener('blur', () => {
+    try {
+      const val = sectionsEl.value.trim();
+      if (val) JSON.parse(val);
+      jsonError?.classList.add('hidden');
+      sectionsEl.classList.remove('border-red-500');
+    } catch {
+      jsonError?.classList.remove('hidden');
+      sectionsEl.classList.add('border-red-500');
+    }
+  });
+</script>

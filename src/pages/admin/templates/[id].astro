@@ -1,0 +1,57 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import TemplateForm from '../../../components/admin/TemplateForm.astro';
+import { createServerClient } from '../../../lib/supabase-server';
+import { getTemplateById, updateTemplate } from '../../../lib/cms-admin';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const supabase = createServerClient(Astro.cookies);
+
+let error = '';
+let template = await getTemplateById(supabase, id!);
+
+if (!template) {
+  return Astro.redirect('/admin/templates');
+}
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+
+  let sections: Record<string, any>[] = [];
+  try {
+    const raw = form.get('sections')?.toString().trim();
+    if (raw) sections = JSON.parse(raw);
+  } catch {
+    error = 'Invalid JSON in Sections field.';
+  }
+
+  if (!error) {
+    try {
+      template = await updateTemplate(supabase, id!, {
+        template_name: form.get('template_name')?.toString() ?? template.template_name,
+        page_type: form.get('page_type')?.toString() ?? template.page_type,
+        description: form.get('description')?.toString() || null,
+        is_public: form.get('is_public') === 'true',
+        sections,
+      });
+      return Astro.redirect('/admin/templates?success=Template+updated+successfully');
+    } catch (e: any) {
+      error = e.message || 'Failed to update template.';
+    }
+  }
+}
+---
+
+<AdminLayout title="Edit Template">
+  <div class="max-w-3xl">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="/admin/templates" class="text-sm text-slate-400 hover:text-slate-300 transition-colors flex items-center gap-1">
+        <i class="ri-arrow-left-s-line"></i> Back to templates
+      </a>
+      <span class="text-xs text-slate-600 font-mono">{id}</span>
+    </div>
+    <TemplateForm template={template} error={error} />
+  </div>
+</AdminLayout>

@@ -1,0 +1,162 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { createServerClient } from '../../../lib/supabase-server';
+import { getAllSections } from '../../../lib/cms-admin';
+
+export const prerender = false;
+
+const supabase = createServerClient(Astro.cookies);
+
+const pageTypeFilter = Astro.url.searchParams.get('page_type') || '';
+const sectionTypeFilter = Astro.url.searchParams.get('section_type') || '';
+
+const filters: Record<string, any> = {};
+if (pageTypeFilter) filters.page_type = pageTypeFilter;
+if (sectionTypeFilter) filters.section_type = sectionTypeFilter;
+
+let sections = await getAllSections(supabase, Object.keys(filters).length > 0 ? filters : undefined);
+
+const pageTypes = ['credit_card', 'category', 'homepage', 'article', 'lender'];
+const sectionTypes = ['rich_text', 'faq_accordion', 'comparison_table', 'callout_box', 'checklist', 'numbered_steps', 'feature_highlights', 'two_column_text', 'cta_banner'];
+const successMsg = Astro.url.searchParams.get('success');
+---
+
+<AdminLayout title="Content Sections">
+  <div class="space-y-6">
+    {successMsg && (
+      <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4 flex items-center gap-3">
+        <i class="ri-checkbox-circle-line text-emerald-400 text-xl"></i>
+        <p class="text-emerald-300 text-sm">{successMsg}</p>
+      </div>
+    )}
+
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div class="flex items-center gap-3 flex-wrap">
+        <form method="GET" class="flex items-center gap-2 flex-wrap">
+          <select name="page_type" class="bg-slate-800 border border-slate-700 text-sm text-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500">
+            <option value="">All Page Types</option>
+            {pageTypes.map(pt => (
+              <option value={pt} selected={pt === pageTypeFilter}>{pt}</option>
+            ))}
+          </select>
+          <select name="section_type" class="bg-slate-800 border border-slate-700 text-sm text-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500">
+            <option value="">All Section Types</option>
+            {sectionTypes.map(st => (
+              <option value={st} selected={st === sectionTypeFilter}>{st}</option>
+            ))}
+          </select>
+          <button type="submit" class="bg-slate-800 hover:bg-slate-700 text-white text-sm px-4 py-2 rounded-lg transition-colors">Filter</button>
+          {(pageTypeFilter || sectionTypeFilter) && (
+            <a href="/admin/sections" class="text-sm text-slate-500 hover:text-slate-300 transition-colors">Clear</a>
+          )}
+        </form>
+      </div>
+      <a href="/admin/sections/new" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shrink-0">
+        <i class="ri-add-line"></i>
+        New Section
+      </a>
+    </div>
+
+    {sections.length === 0 ? (
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center">
+        <i class="ri-inbox-line text-4xl text-slate-600 mb-3"></i>
+        <p class="text-slate-400">No content sections found</p>
+      </div>
+    ) : (
+      <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-slate-800">
+                <th class="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Title</th>
+                <th class="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Section Type</th>
+                <th class="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Page Type</th>
+                <th class="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Order</th>
+                <th class="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                <th class="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Updated</th>
+                <th class="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50">
+              {sections.map(section => (
+                <tr class="hover:bg-slate-800/30 transition-colors">
+                  <td class="px-5 py-3">
+                    <a href={`/admin/sections/${section.id}`} class="text-white hover:text-orange-400 transition-colors font-medium text-sm">
+                      {section.title || '(Untitled)'}
+                    </a>
+                  </td>
+                  <td class="px-5 py-3">
+                    <span class="text-xs bg-slate-800 text-slate-300 px-2 py-1 rounded-md font-mono">{section.section_type}</span>
+                  </td>
+                  <td class="px-5 py-3 text-sm text-slate-400">{section.page_type}</td>
+                  <td class="px-5 py-3 text-sm text-slate-400">{section.sort_order}</td>
+                  <td class="px-5 py-3">
+                    {section.is_active ? (
+                      <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-md">Active</span>
+                    ) : (
+                      <span class="text-xs bg-slate-700/50 text-slate-400 px-2 py-1 rounded-md">Inactive</span>
+                    )}
+                  </td>
+                  <td class="px-5 py-3 text-sm text-slate-500">{new Date(section.updated_at).toLocaleDateString('en-CA')}</td>
+                  <td class="px-5 py-3 text-right">
+                    <div class="flex items-center justify-end gap-2">
+                      <a href={`/admin/sections/${section.id}`} class="text-slate-400 hover:text-orange-400 transition-colors p-1" title="Edit">
+                        <i class="ri-edit-line"></i>
+                      </a>
+                      <button
+                        type="button"
+                        class="text-slate-400 hover:text-red-400 transition-colors p-1 delete-btn"
+                        data-id={section.id}
+                        data-title={section.title || 'this section'}
+                        title="Delete"
+                      >
+                        <i class="ri-delete-bin-line"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div class="px-5 py-3 border-t border-slate-800 text-sm text-slate-500">
+          {sections.length} section{sections.length !== 1 ? 's' : ''}
+        </div>
+      </div>
+    )}
+  </div>
+
+  <dialog id="delete-dialog" class="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-md w-full backdrop:bg-black/50 text-white">
+    <h3 class="text-lg font-semibold mb-2">Delete Section</h3>
+    <p class="text-slate-400 text-sm mb-6">Are you sure you want to delete "<span id="delete-title"></span>"? This action cannot be undone.</p>
+    <div class="flex items-center justify-end gap-3">
+      <button type="button" id="cancel-delete" class="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors">Cancel</button>
+      <form method="POST" id="delete-form" action="">
+        <input type="hidden" name="_method" value="DELETE" />
+        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Delete</button>
+      </form>
+    </div>
+  </dialog>
+
+  <script>
+    const dialog = document.getElementById('delete-dialog') as HTMLDialogElement;
+    const deleteTitle = document.getElementById('delete-title');
+    const deleteForm = document.getElementById('delete-form') as HTMLFormElement;
+    const cancelBtn = document.getElementById('cancel-delete');
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = (btn as HTMLElement).dataset.id;
+        const title = (btn as HTMLElement).dataset.title;
+        if (deleteTitle) deleteTitle.textContent = title || '';
+        if (deleteForm) deleteForm.action = `/api/admin/sections/${id}`;
+        dialog?.showModal();
+      });
+    });
+
+    cancelBtn?.addEventListener('click', () => dialog?.close());
+    dialog?.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+  </script>
+</AdminLayout>

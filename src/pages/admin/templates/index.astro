@@ -1,0 +1,123 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { createServerClient } from '../../../lib/supabase-server';
+import { getAllTemplates } from '../../../lib/cms-admin';
+
+export const prerender = false;
+
+const supabase = createServerClient(Astro.cookies);
+const templates = await getAllTemplates(supabase);
+const successMsg = Astro.url.searchParams.get('success');
+---
+
+<AdminLayout title="Templates">
+  <div class="space-y-6">
+    {successMsg && (
+      <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4 flex items-center gap-3">
+        <i class="ri-checkbox-circle-line text-emerald-400 text-xl"></i>
+        <p class="text-emerald-300 text-sm">{successMsg}</p>
+      </div>
+    )}
+
+    <div class="flex items-center justify-between">
+      <p class="text-sm text-slate-400">{templates.length} template{templates.length !== 1 ? 's' : ''}</p>
+      <a href="/admin/templates/new" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+        <i class="ri-add-line"></i>
+        New Template
+      </a>
+    </div>
+
+    {templates.length === 0 ? (
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center">
+        <i class="ri-file-copy-line text-4xl text-slate-600 mb-3"></i>
+        <p class="text-slate-400">No templates yet</p>
+      </div>
+    ) : (
+      <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-slate-800">
+                <th class="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Name</th>
+                <th class="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Page Type</th>
+                <th class="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
+                <th class="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Public</th>
+                <th class="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Created</th>
+                <th class="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50">
+              {templates.map(tpl => (
+                <tr class="hover:bg-slate-800/30 transition-colors">
+                  <td class="px-5 py-3">
+                    <a href={`/admin/templates/${tpl.id}`} class="text-white hover:text-orange-400 transition-colors font-medium text-sm">
+                      {tpl.template_name}
+                    </a>
+                  </td>
+                  <td class="px-5 py-3 text-sm text-slate-400">{tpl.page_type}</td>
+                  <td class="px-5 py-3 text-sm text-slate-500 max-w-xs truncate">{tpl.description || '-'}</td>
+                  <td class="px-5 py-3">
+                    {tpl.is_public ? (
+                      <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-md">Public</span>
+                    ) : (
+                      <span class="text-xs bg-slate-700/50 text-slate-400 px-2 py-1 rounded-md">Private</span>
+                    )}
+                  </td>
+                  <td class="px-5 py-3 text-sm text-slate-500">{new Date(tpl.created_at).toLocaleDateString('en-CA')}</td>
+                  <td class="px-5 py-3 text-right">
+                    <div class="flex items-center justify-end gap-2">
+                      <a href={`/admin/templates/${tpl.id}`} class="text-slate-400 hover:text-orange-400 transition-colors p-1" title="Edit">
+                        <i class="ri-edit-line"></i>
+                      </a>
+                      <button
+                        type="button"
+                        class="text-slate-400 hover:text-red-400 transition-colors p-1 delete-btn"
+                        data-id={tpl.id}
+                        data-name={tpl.template_name}
+                        title="Delete"
+                      >
+                        <i class="ri-delete-bin-line"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )}
+  </div>
+
+  <dialog id="delete-dialog" class="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-md w-full backdrop:bg-black/50 text-white">
+    <h3 class="text-lg font-semibold mb-2">Delete Template</h3>
+    <p class="text-slate-400 text-sm mb-6">Are you sure you want to delete "<span id="delete-name"></span>"?</p>
+    <div class="flex items-center justify-end gap-3">
+      <button type="button" id="cancel-delete" class="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors">Cancel</button>
+      <form method="POST" id="delete-form" action="">
+        <input type="hidden" name="_method" value="DELETE" />
+        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Delete</button>
+      </form>
+    </div>
+  </dialog>
+
+  <script>
+    const dialog = document.getElementById('delete-dialog') as HTMLDialogElement;
+    const deleteForm = document.getElementById('delete-form') as HTMLFormElement;
+    const deleteName = document.getElementById('delete-name');
+    const cancelBtn = document.getElementById('cancel-delete');
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = (btn as HTMLElement).dataset.id;
+        const name = (btn as HTMLElement).dataset.name;
+        if (deleteName) deleteName.textContent = name || '';
+        if (deleteForm) deleteForm.action = `/api/admin/templates/${id}`;
+        dialog?.showModal();
+      });
+    });
+
+    cancelBtn?.addEventListener('click', () => dialog?.close());
+    dialog?.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+  </script>
+</AdminLayout>

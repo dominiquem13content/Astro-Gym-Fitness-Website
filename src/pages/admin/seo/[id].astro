@@ -1,0 +1,47 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import SeoForm from '../../../components/admin/SeoForm.astro';
+import { createServerClient } from '../../../lib/supabase-server';
+import { getSeoContentById, updateSeoContent } from '../../../lib/cms-admin';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const supabase = createServerClient(Astro.cookies);
+
+let error = '';
+let entry = await getSeoContentById(supabase, id!);
+
+if (!entry) {
+  return Astro.redirect('/admin/seo');
+}
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+
+  try {
+    entry = await updateSeoContent(supabase, id!, {
+      page_type: form.get('page_type')?.toString() ?? entry.page_type,
+      page_id: form.get('page_id')?.toString() ?? entry.page_id,
+      intro_text: form.get('intro_text')?.toString() || null,
+      main_content: form.get('main_content')?.toString() || null,
+      bottom_content: form.get('bottom_content')?.toString() || null,
+    });
+    return Astro.redirect('/admin/seo?success=SEO+entry+updated+successfully');
+  } catch (e: any) {
+    error = e.message || 'Failed to update SEO entry.';
+  }
+}
+---
+
+<AdminLayout title="Edit SEO Entry">
+  <div class="max-w-3xl">
+    <div class="mb-6 flex items-center justify-between">
+      <a href="/admin/seo" class="text-sm text-slate-400 hover:text-slate-300 transition-colors flex items-center gap-1">
+        <i class="ri-arrow-left-s-line"></i> Back to SEO content
+      </a>
+      <span class="text-xs text-slate-600 font-mono">{id}</span>
+    </div>
+    <SeoForm entry={entry} error={error} />
+  </div>
+</AdminLayout>
