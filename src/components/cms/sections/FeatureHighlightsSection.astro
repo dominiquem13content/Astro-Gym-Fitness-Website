@@ -1,0 +1,33 @@
+---
+interface Feature {
+  title: string;
+  description: string;
+  icon?: string;
+}
+
+interface Props {
+  title?: string | null;
+  features: Feature[];
+}
+
+const { title, features = [] } = Astro.props;
+---
+
+{features.length > 0 && (
+  <section class="cms-feature-highlights">
+    {title && <h2 class="text-2xl md:text-3xl font-bold text-white mb-8 font-heading">{title}</h2>}
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {features.map(feature => (
+        <div class="p-6 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-orange-500/30 transition-all duration-300 group">
+          {feature.icon && (
+            <div class="text-3xl mb-4 group-hover:scale-110 transition-transform duration-300">
+              {feature.icon}
+            </div>
+          )}
+          <h3 class="text-lg font-semibold text-white mb-2">{feature.title}</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">{feature.description}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+)}

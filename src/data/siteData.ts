@@ -52,6 +52,7 @@ export const navigation = [
   { name: "About", href: "/about" },
   { name: "Classes", href: "/classes" },
   { name: "Pricing", href: "/pricing" },
+  { name: "Articles", href: "/articles/best-credit-cards-canada" },
   { name: "Contact", href: "/contact" },
 ];
 

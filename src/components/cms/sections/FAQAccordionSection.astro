@@ -1,0 +1,70 @@
+---
+interface FAQ {
+  question: string;
+  answer: string;
+}
+
+interface Props {
+  title?: string | null;
+  faqs: FAQ[];
+}
+
+const { title, faqs = [] } = Astro.props;
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": faqs.map(faq => ({
+    "@type": "Question",
+    "name": faq.question,
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": faq.answer
+    }
+  }))
+};
+---
+
+{faqs.length > 0 && (
+  <section class="cms-faq-accordion">
+    {title && <h2 class="text-2xl md:text-3xl font-bold text-white mb-8 font-heading">{title}</h2>}
+    <div class="space-y-3">
+      {faqs.map((faq, index) => (
+        <div class="faq-item border border-slate-700 rounded-xl overflow-hidden bg-slate-800/50 transition-all duration-200 hover:border-slate-600">
+          <button
+            type="button"
+            class="faq-toggle w-full flex items-center justify-between p-5 text-left text-white font-medium text-lg cursor-pointer"
+            data-faq-target={`faq-answer-${index}`}
+          >
+            <span class="pr-4">{faq.question}</span>
+            <i class="ri-add-line text-orange-500 text-xl shrink-0 faq-icon transition-transform duration-300"></i>
+          </button>
+          <div class="faq-answer hidden px-5 pb-5" id={`faq-answer-${index}`}>
+            <div class="border-t border-slate-700 pt-4 text-slate-300 leading-relaxed">
+              {faq.answer}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+    <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+  </section>
+)}
+
+<script>
+  document.querySelectorAll('.faq-toggle').forEach(button => {
+    button.addEventListener('click', () => {
+      const targetId = (button as HTMLElement).dataset.faqTarget;
+      if (!targetId) return;
+      const target = document.getElementById(targetId);
+      const icon = button.querySelector('.faq-icon');
+      if (!target || !icon) return;
+
+      const isOpen = !target.classList.contains('hidden');
+      target.classList.toggle('hidden');
+      icon.classList.toggle('ri-add-line', isOpen);
+      icon.classList.toggle('ri-subtract-line', !isOpen);
+      icon.classList.toggle('rotate-180', !isOpen);
+    });
+  });
+</script>

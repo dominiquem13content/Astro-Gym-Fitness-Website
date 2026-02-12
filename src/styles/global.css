@@ -64,3 +64,69 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-orange-600;
 }
+
+.cms-seo-block p {
+  margin-bottom: 1rem;
+}
+
+.cms-seo-block p:last-child {
+  margin-bottom: 0;
+}
+
+.prose-invert strong {
+  color: #fff;
+}
+
+.prose-invert a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose-invert a:hover {
+  color: var(--color-primary-light);
+}
+
+.prose-invert p {
+  margin-bottom: 1rem;
+}
+
+.prose-invert p:last-child {
+  margin-bottom: 0;
+}
+
+.prose-invert ul,
+.prose-invert ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.prose-invert ul {
+  list-style-type: disc;
+}
+
+.prose-invert ol {
+  list-style-type: decimal;
+}
+
+.prose-invert li {
+  margin-bottom: 0.375rem;
+}
+
+.prose-invert h3 {
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.prose-invert h4 {
+  color: #fff;
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.cms-section + .cms-section {
+  margin-top: 0;
+}

@@ -1,0 +1,12 @@
+---
+interface Props {
+  content?: string | null;
+  class?: string;
+}
+
+const { content, class: className = '' } = Astro.props;
+---
+
+{content && (
+  <div class={`cms-seo-block text-slate-300 leading-relaxed text-lg ${className}`} set:html={content} />
+)}

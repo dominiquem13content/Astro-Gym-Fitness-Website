@@ -1,0 +1,50 @@
+---
+interface Props {
+  title?: string | null;
+  content?: string | null;
+  variant?: string;
+}
+
+const { title, content, variant = 'info' } = Astro.props;
+
+const variantStyles: Record<string, { bg: string; border: string; icon: string; iconColor: string }> = {
+  info: {
+    bg: 'bg-sky-900/20',
+    border: 'border-sky-500/40',
+    icon: 'ri-information-line',
+    iconColor: 'text-sky-400',
+  },
+  warning: {
+    bg: 'bg-amber-900/20',
+    border: 'border-amber-500/40',
+    icon: 'ri-alert-line',
+    iconColor: 'text-amber-400',
+  },
+  success: {
+    bg: 'bg-emerald-900/20',
+    border: 'border-emerald-500/40',
+    icon: 'ri-checkbox-circle-line',
+    iconColor: 'text-emerald-400',
+  },
+  danger: {
+    bg: 'bg-rose-900/20',
+    border: 'border-rose-500/40',
+    icon: 'ri-error-warning-line',
+    iconColor: 'text-rose-400',
+  },
+};
+
+const style = variantStyles[variant] || variantStyles.info;
+---
+
+{content && (
+  <section class={`cms-callout-box rounded-xl border-l-4 p-6 ${style.bg} ${style.border}`}>
+    <div class="flex items-start gap-4">
+      <i class={`${style.icon} ${style.iconColor} text-2xl mt-0.5 shrink-0`}></i>
+      <div>
+        {title && <h3 class="text-lg font-semibold text-white mb-2">{title}</h3>}
+        <div class="text-slate-300 leading-relaxed" set:html={content} />
+      </div>
+    </div>
+  </section>
+)}

@@ -1,0 +1,23 @@
+---
+interface Props {
+  title?: string | null;
+  leftColumn: string;
+  rightColumn: string;
+}
+
+const { title, leftColumn, rightColumn } = Astro.props;
+---
+
+{(leftColumn || rightColumn) && (
+  <section class="cms-two-column-text">
+    {title && <h2 class="text-2xl md:text-3xl font-bold text-white mb-8 font-heading">{title}</h2>}
+    <div class="grid md:grid-cols-2 gap-8">
+      <div class="p-6 rounded-xl bg-slate-800/40 border border-slate-700/50">
+        <div class="prose prose-invert max-w-none text-slate-300 leading-relaxed" set:html={leftColumn} />
+      </div>
+      <div class="p-6 rounded-xl bg-slate-800/40 border border-slate-700/50">
+        <div class="prose prose-invert max-w-none text-slate-300 leading-relaxed" set:html={rightColumn} />
+      </div>
+    </div>
+  </section>
+)}
